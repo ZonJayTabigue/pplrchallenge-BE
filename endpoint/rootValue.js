@@ -8,7 +8,7 @@ const RootValue = {
     },
 
     properties: async () => {
-        const properties = await Properties.findAll();
+        const properties = await Properties.findAll({include: Users});
         
         return propertiesWithUsers = await Promise.all(
             properties.map(async property => {
@@ -22,22 +22,50 @@ const RootValue = {
         ));
     },
 
-    searchProperty: async args => {
-        const { query } = args;
-        const properties = await Properties.findAll({
+    search: async ({ query }) => {
+        const searchStr = query.split(' ');
+
+        const userResults = await Users.findAll({
             where: {
+            [Op.or]: searchStr.map(word => ({
                 [Op.or]: [
-                    { '$user.firstName$': { [Op.iLike]: `%${query}%` } },
-                    { '$user.lastName$': { [Op.iLike]: `%${query}%` } },
-                    { street: { [Op.iLike]: `%${query}%` } },
-                    { city: { [Op.iLike]: `%${query}%` } },
-                    { state: { [Op.iLike]: `%${query}%` } },
-                    { zip: { [Op.iLike]: `%${query}%` } }
+                { firstName: { [Op.iLike]: `%${word}%` } },
+                { lastName: { [Op.iLike]: `%${word}%` } }
                 ]
-            },
-            include: Users
+            }))
+            }
         });
-        return properties;
+        
+        if (userResults.length > 0) {
+            const results = await Promise.all(
+                userResults.map(async user => {
+                  const userProperties = await Properties.findAll({
+                    where: {
+                      user_id: user.id
+                    }
+                  });
+                  user.id = user.id;
+                  user.properties = userProperties;
+                  return user ;
+                })
+            );
+            return [{ users: results }];
+        } else {
+            const propertyResults = await Properties.findAll({
+                where: {
+                [Op.or]: searchStr.map(word => ({
+                    [Op.or]: [
+                        { street: { [Op.iLike]: `%${word}%` } },
+                        { city: { [Op.iLike]: `%${word}%` } },
+                        { state: { [Op.iLike]: `%${word}%` } },
+                        { zip: { [Op.iLike]: `%${word}%` } }
+                        ]
+                }))
+                },
+                include: Users
+            });
+            return [{ properties: propertyResults }];
+        }
     },
 
     createUser: args => {

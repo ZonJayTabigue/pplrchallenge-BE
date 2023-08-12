@@ -32,10 +32,22 @@ const Schema = buildSchema(`
             rent: Int!
         }
 
+        type UserResult {
+            id: String!
+            firstName: String!
+            lastName: String!,
+            properties: [Property!]
+        }
+
+        type Results {
+            users: [UserResult!]
+            properties: [Property!]
+        }
+
         type RootQuery {
             users: [User!]!
             properties: [Property!]!
-            searchProperty(query: String!): [Property!]!
+            search(query: String!): [Results!]
         }
 
         type RootMutation {
