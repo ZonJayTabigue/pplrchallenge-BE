@@ -21,13 +21,6 @@ app.use('/graphql', graphqlHTTP({
     graphiql: true
 }));
 
-// app.get('/properties', async (req, res) => {
-//     const properties = await Properties.findAll({
-//         include: Users // Include the associated User data
-//     });
-//     res.json(properties);
-// });
-
 app.listen(8000);
 
 // Test DB Connection
